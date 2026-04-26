@@ -39,17 +39,17 @@ class BaseRoutine(ABC):
     def _create_document(self, results: dict) -> str:
         now = datetime.now()
         friendly_date = now.strftime("%B %d %Y").replace(" 0", " ")
-        filename = f"{self.name} - รายงานการวิจัย, {friendly_date}.docx"
+        filename = f"{self.name} - อัปเดตงาน, {friendly_date}.docx"
         path = os.path.join("/tmp", filename)
 
         doc = Document()
 
-        title = doc.add_heading("รายงานการวิจัย", level=0)
+        title = doc.add_heading(f"อัปเดตงานของ {self.name} 🗂️", level=0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         subtitle = doc.add_paragraph()
         subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = subtitle.add_run(f"จัดทำโดย {self.name}  |  {_thai_date(now)}")
+        run = subtitle.add_run(f"เขียนโดย {self.name}  ·  {_thai_date(now)}")
         run.font.size = Pt(11)
         run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
