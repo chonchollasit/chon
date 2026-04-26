@@ -6,6 +6,20 @@ from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from drive.uploader import upload_to_researcher_folder
 
+_THAI_MONTHS = [
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
+    "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม",
+    "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+]
+
+
+def _thai_date(dt: datetime) -> str:
+    return f"{dt.day} {_THAI_MONTHS[dt.month - 1]} {dt.year + 543}"
+
+
+def _thai_datetime(dt: datetime) -> str:
+    return f"{_thai_date(dt)} เวลา {dt.strftime('%H:%M')} น."
+
 
 class BaseRoutine(ABC):
     name: str = "BaseRoutine"
@@ -24,27 +38,23 @@ class BaseRoutine(ABC):
 
     def _create_document(self, results: dict) -> str:
         now = datetime.now()
-        # Human-readable filename: e.g. "Remy - Research Report, April 26 2026.docx"
         friendly_date = now.strftime("%B %d %Y").replace(" 0", " ")
-        filename = f"{self.name} - Research Report, {friendly_date}.docx"
+        filename = f"{self.name} - รายงานการวิจัย, {friendly_date}.docx"
         path = os.path.join("/tmp", filename)
 
         doc = Document()
 
-        # Title
-        title = doc.add_heading(f"Research Report", level=0)
+        title = doc.add_heading("รายงานการวิจัย", level=0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        # Subtitle: who wrote it and when
         subtitle = doc.add_paragraph()
         subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = subtitle.add_run(f"Prepared by {self.name}  |  {now.strftime('%B %d, %Y')}")
+        run = subtitle.add_run(f"จัดทำโดย {self.name}  |  {_thai_date(now)}")
         run.font.size = Pt(11)
         run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-        doc.add_paragraph()  # spacing
+        doc.add_paragraph()
 
-        # Body sections — each key becomes a natural heading + paragraph
         for section_title, content in results.items():
             doc.add_heading(section_title, level=2)
             body = doc.add_paragraph(str(content))

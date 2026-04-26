@@ -1,5 +1,5 @@
 from datetime import datetime
-from .base import BaseRoutine
+from .base import BaseRoutine, _thai_datetime
 
 
 class AdamsRoutine(BaseRoutine):
@@ -8,17 +8,17 @@ class AdamsRoutine(BaseRoutine):
     def execute(self) -> dict:
         print(f"[{self.name}] Running routine logic...")
         return {
-            "Overview": (
-                "This report was generated as part of the Adams routine. "
-                "The routine ran on schedule and all processes completed successfully."
+            "ภาพรวม": (
+                "รายงานฉบับนี้จัดทำขึ้นเป็นส่วนหนึ่งของกิจวัตร Adams "
+                "กิจวัตรดำเนินการตรงตามกำหนดเวลาและกระบวนการทุกขั้นตอนเสร็จสิ้นเรียบร้อย"
             ),
-            "Findings": (
-                "A thorough review of the assigned tasks was conducted. "
-                "Results were consistent with previous runs and all outputs met the expected criteria."
+            "ผลการดำเนินงาน": (
+                "ได้ทำการทบทวนงานที่ได้รับมอบหมายอย่างละเอียดครบถ้วน "
+                "ผลลัพธ์สอดคล้องกับการรันครั้งก่อนหน้าและผลผลิตทุกรายการเป็นไปตามเกณฑ์ที่กำหนด"
             ),
-            "Notes": (
-                "Everything looks good. No urgent items to flag. "
-                "Documentation has been updated to reflect the latest run."
+            "หมายเหตุ": (
+                "ทุกอย่างเป็นไปด้วยดี ไม่มีรายการเร่งด่วนที่ต้องแจ้ง "
+                "เอกสารได้รับการอัปเดตให้สะท้อนข้อมูลการรันล่าสุดแล้ว"
             ),
-            "Completed At": datetime.now().strftime("%B %d, %Y at %I:%M %p"),
+            "เสร็จสิ้นเมื่อ": _thai_datetime(datetime.now()),
         }

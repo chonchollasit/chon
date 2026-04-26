@@ -1,5 +1,5 @@
 from datetime import datetime
-from .base import BaseRoutine
+from .base import BaseRoutine, _thai_datetime
 
 
 class RemyRoutine(BaseRoutine):
@@ -8,17 +8,17 @@ class RemyRoutine(BaseRoutine):
     def execute(self) -> dict:
         print(f"[{self.name}] Running routine logic...")
         return {
-            "Overview": (
-                "This report was generated as part of the Remy routine. "
-                "All tasks were carried out as scheduled with no issues encountered."
+            "ภาพรวม": (
+                "รายงานฉบับนี้จัดทำขึ้นเป็นส่วนหนึ่งของกิจวัตร Remy "
+                "โดยงานทุกอย่างดำเนินไปตามกำหนดการและไม่พบปัญหาใดๆ"
             ),
-            "Findings": (
-                "The routine completed a full cycle of assigned checks. "
-                "All data points were within expected ranges and no anomalies were detected."
+            "ผลการดำเนินงาน": (
+                "กิจวัตรได้ดำเนินการตรวจสอบครบทุกขั้นตอนที่กำหนดไว้ "
+                "ข้อมูลทุกรายการอยู่ในช่วงที่คาดไว้และไม่พบความผิดปกติใดๆ"
             ),
-            "Notes": (
-                "No follow-up actions are required at this time. "
-                "Next scheduled run will proceed automatically."
+            "หมายเหตุ": (
+                "ขณะนี้ไม่มีรายการที่ต้องดำเนินการต่อ "
+                "การรันครั้งถัดไปจะดำเนินการโดยอัตโนมัติตามกำหนดเวลา"
             ),
-            "Completed At": datetime.now().strftime("%B %d, %Y at %I:%M %p"),
+            "เสร็จสิ้นเมื่อ": _thai_datetime(datetime.now()),
         }
