@@ -39,6 +39,7 @@ def _parse_findings(raw: str) -> list[dict]:
 class RemyRoutine(BaseRoutine):
     name = "Remy"
     title = "Researcher"
+    folder_id = "1qPhgMizbhJ6e_g0dQi4pL4C4rTcKYwuo"
 
     def execute(self) -> dict:
         print(f"[{self.name}] Researching viral recipes...")

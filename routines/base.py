@@ -4,7 +4,7 @@ from datetime import datetime
 from docx import Document
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from drive.uploader import upload_to_researcher_folder
+from drive.uploader import upload_to_researcher_folder, upload_to_folder
 
 _THAI_MONTHS = [
     "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน",
@@ -24,6 +24,7 @@ def _thai_datetime(dt: datetime) -> str:
 class BaseRoutine(ABC):
     name: str = "BaseRoutine"
     title: str = ""
+    folder_id: str = None  # if set, upload to this Drive folder instead of Researcher
 
     def run(self):
         print(f"[{self.name}] Starting routine...")
@@ -34,7 +35,10 @@ class BaseRoutine(ABC):
         results = self.execute()
         doc_path = self._create_document(results)
         filename = os.path.basename(doc_path)
-        file_id, link = upload_to_researcher_folder(doc_path)
+        if self.folder_id:
+            file_id, link = upload_to_folder(doc_path, self.folder_id)
+        else:
+            file_id, link = upload_to_researcher_folder(doc_path)
         os.remove(doc_path)
         return results, file_id, link, filename
 
