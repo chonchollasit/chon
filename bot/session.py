@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -10,7 +10,6 @@ class Session:
     file_id: str
     doc_link: str
     original_filename: str
-    waiting_for_confirm: bool = False
 
 
 sessions: dict[str, Session] = {}

@@ -120,20 +120,9 @@ def handle_message(event):
             session = sessions[user_id]
 
             if text_lower == "ลุย":
-                if session.waiting_for_confirm:
-                    # Second "ลุย" — confirmed, close session
-                    del sessions[user_id]
-                    reply("ลุยเลย! เอกสารพร้อมส่งแล้ว 🚀🎉")
-                else:
-                    # First "ลุย" — ask to confirm
-                    sessions[user_id].waiting_for_confirm = True
-                    reply(
-                        "แน่ใจแล้วนะ? ถ้าโอเคจริงๆ พิมพ์ 'ลุย' อีกครั้งเพื่อยืนยัน 🚀\n"
-                        "หรือบอกเลยถ้ายังอยากแก้อะไรเพิ่ม"
-                    )
+                del sessions[user_id]
+                reply("ลุยเลย! เอกสารพร้อมส่งแล้ว 🚀🎉")
             else:
-                # Any other text = feedback, reset confirm state and revise
-                sessions[user_id].waiting_for_confirm = False
                 reply("กำลังแก้ไขให้นะ รอแป๊บนึง... ✍️")
                 threading.Thread(target=_revise_and_push, args=(user_id, text)).start()
             return
