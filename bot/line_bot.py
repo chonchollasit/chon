@@ -24,8 +24,6 @@ ROUTINE_MAP = {
     "jk": JKRoutine,
 }
 
-DONE_KEYWORDS = {"โอเค", "ok", "okay", "ส่งได้เลย", "ดีแล้ว", "พอแล้ว", "done"}
-
 HELP_TEXT = (
     "สวัสดี! 👋 พิมพ์ชื่อ routine ได้เลย:\n\n"
     "• remy — Researcher\n"
@@ -33,7 +31,7 @@ HELP_TEXT = (
     "• jk — Writer\n"
     "• all — รันทั้งหมดพร้อมกัน\n\n"
     "หลังจากได้เอกสารแล้ว บอกได้เลยว่าอยากแก้อะไร "
-    "หรือพิมพ์ 'โอเค' ถ้าพอใจแล้ว"
+    "หรือพิมพ์ 'ลุย' ถ้าพอใจแล้ว"
 )
 
 
@@ -47,18 +45,20 @@ def _push(user_id: str, text: str):
 def _run_and_push(user_id: str, routine_cls):
     try:
         routine = routine_cls()
-        results, link = routine.run_and_return_link()
+        results, file_id, link, filename = routine.run_and_return_link()
         sessions[user_id] = Session(
             routine_name=routine.name,
             routine_title=routine.title,
             routine_cls=routine_cls,
             content=results,
+            file_id=file_id,
             doc_link=link,
+            original_filename=filename,
         )
         _push(user_id, (
             f"✅ {routine.name} ({routine.title}) เสร็จแล้ว!\n\n"
             f"📄 {link}\n\n"
-            f"มีอะไรให้แก้ไหม? ถ้าโอเคพิมพ์ 'โอเค' ได้เลย 😊"
+            f"มีอะไรให้แก้ไหม? ถ้าโอเคพิมพ์ 'ลุย' ได้เลย 😊"
         ))
     except Exception as e:
         _push(user_id, f"❌ เกิดข้อผิดพลาดตอนรัน: {e}")
@@ -69,21 +69,20 @@ def _revise_and_push(user_id: str, feedback: str):
     try:
         revised = revise_content(session.content, feedback)
         routine = session.routine_cls()
-        doc_path = routine._create_document(revised)
+        doc_path = routine._create_document(revised, filename=session.original_filename)
 
-        from drive.uploader import upload_to_researcher_folder
-        link = upload_to_researcher_folder(doc_path)
+        from drive.uploader import update_file_in_drive
+        link = update_file_in_drive(session.file_id, doc_path)
 
-        import os as _os
-        _os.remove(doc_path)
+        os.remove(doc_path)
 
         sessions[user_id].content = revised
         sessions[user_id].doc_link = link
 
         _push(user_id, (
-            f"✏️ แก้ไขเสร็จแล้ว!\n\n"
+            f"✏️ แก้ไขเสร็จแล้ว! อัปเดตในไฟล์เดิมเลยนะ\n\n"
             f"📄 {link}\n\n"
-            f"มีอะไรให้แก้เพิ่มไหม? ถ้าโอเคพิมพ์ 'โอเค' ได้เลย 😊"
+            f"มีอะไรให้แก้เพิ่มไหม? ถ้าโอเคพิมพ์ 'ลุย' ได้เลย 😊"
         ))
     except Exception as e:
         _push(user_id, f"❌ แก้ไขไม่ได้: {e}")
@@ -118,10 +117,23 @@ def handle_message(event):
             )
 
         if user_id in sessions:
-            if text_lower in DONE_KEYWORDS:
-                del sessions[user_id]
-                reply("เยี่ยมเลย! เอกสารพร้อมแล้ว 🎉")
+            session = sessions[user_id]
+
+            if text_lower == "ลุย":
+                if session.waiting_for_confirm:
+                    # Second "ลุย" — confirmed, close session
+                    del sessions[user_id]
+                    reply("ลุยเลย! เอกสารพร้อมส่งแล้ว 🚀🎉")
+                else:
+                    # First "ลุย" — ask to confirm
+                    sessions[user_id].waiting_for_confirm = True
+                    reply(
+                        "แน่ใจแล้วนะ? ถ้าโอเคจริงๆ พิมพ์ 'ลุย' อีกครั้งเพื่อยืนยัน 🚀\n"
+                        "หรือบอกเลยถ้ายังอยากแก้อะไรเพิ่ม"
+                    )
             else:
+                # Any other text = feedback, reset confirm state and revise
+                sessions[user_id].waiting_for_confirm = False
                 reply("กำลังแก้ไขให้นะ รอแป๊บนึง... ✍️")
                 threading.Thread(target=_revise_and_push, args=(user_id, text)).start()
             return

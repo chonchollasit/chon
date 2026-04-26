@@ -57,7 +57,8 @@ def _get_or_create_researcher_folder(service) -> str:
     return folder_id
 
 
-def upload_to_researcher_folder(file_path: str) -> str:
+def upload_to_researcher_folder(file_path: str) -> tuple[str, str]:
+    """Upload a new file. Returns (file_id, web_view_link)."""
     service = _get_drive_service()
     folder_id = _get_or_create_researcher_folder(service)
 
@@ -78,4 +79,22 @@ def upload_to_researcher_folder(file_path: str) -> str:
     )
     link = uploaded.get("webViewLink", f"https://drive.google.com/file/d/{uploaded['id']}/view")
     print(f"[Drive] Uploaded '{uploaded['name']}' -> {link}")
+    return uploaded["id"], link
+
+
+def update_file_in_drive(file_id: str, file_path: str) -> str:
+    """Overwrite an existing Drive file in-place. Returns updated web_view_link."""
+    service = _get_drive_service()
+    media = MediaFileUpload(
+        file_path,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        resumable=True,
+    )
+    updated = (
+        service.files()
+        .update(fileId=file_id, media_body=media, fields="id, name, webViewLink")
+        .execute()
+    )
+    link = updated.get("webViewLink", f"https://drive.google.com/file/d/{updated['id']}/view")
+    print(f"[Drive] Updated '{updated['name']}' -> {link}")
     return link

@@ -27,24 +27,26 @@ class BaseRoutine(ABC):
 
     def run(self):
         print(f"[{self.name}] Starting routine...")
-        _, link = self.run_and_return_link()
+        _, _file_id, link, _filename = self.run_and_return_link()
         print(f"[{self.name}] Document uploaded to Researcher folder in Google Drive: {link}")
 
     def run_and_return_link(self) -> tuple:
         results = self.execute()
         doc_path = self._create_document(results)
-        link = upload_to_researcher_folder(doc_path)
+        filename = os.path.basename(doc_path)
+        file_id, link = upload_to_researcher_folder(doc_path)
         os.remove(doc_path)
-        return results, link
+        return results, file_id, link, filename
 
     @abstractmethod
     def execute(self) -> dict:
         """Run routine logic and return a dict of result data."""
 
-    def _create_document(self, results: dict) -> str:
+    def _create_document(self, results: dict, filename: str = None) -> str:
         now = datetime.now()
-        friendly_date = now.strftime("%B %d %Y").replace(" 0", " ")
-        filename = f"{self.name} - อัปเดตงาน, {friendly_date}.docx"
+        if filename is None:
+            friendly_date = now.strftime("%B %d %Y").replace(" 0", " ")
+            filename = f"{self.name} - อัปเดตงาน, {friendly_date}.docx"
         path = os.path.join("/tmp", filename)
 
         doc = Document()
