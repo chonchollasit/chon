@@ -25,13 +25,12 @@ ROUTINE_MAP = {
 }
 
 HELP_TEXT = (
-    "สวัสดี! 👋 พิมพ์ชื่อ routine ได้เลย:\n\n"
-    "• remy — Researcher\n"
-    "• adams — Researcher\n"
-    "• jk — Writer\n"
-    "• all — รันทั้งหมดพร้อมกัน\n\n"
-    "หลังจากได้เอกสารแล้ว บอกได้เลยว่าอยากแก้อะไร "
-    "หรือพิมพ์ 'ลุย' ถ้าพอใจแล้ว"
+    "สวัสดี! พิมพ์คำสั่งได้เลย:\n\n"
+    "• run — รันทุก routine พร้อมกัน\n"
+    "• remy / adams / jk — รัน routine เดียว\n\n"
+    "หลังได้เอกสารแล้ว:\n"
+    "• revise <คอมเมนต์> — แก้ไขเอกสารตามที่บอก\n"
+    "• thank — จบงาน เอกสารพร้อมส่งแล้ว"
 )
 
 
@@ -58,7 +57,8 @@ def _run_and_push(user_id: str, routine_cls):
         _push(user_id, (
             f"✅ {routine.name} ({routine.title}) เสร็จแล้ว!\n\n"
             f"📄 {link}\n\n"
-            f"มีอะไรให้แก้ไหม? ถ้าโอเคพิมพ์ 'ลุย' ได้เลย 😊"
+            f"พิมพ์ 'revise <คอมเมนต์>' ถ้าอยากแก้ไข\n"
+            f"หรือพิมพ์ 'thank' ถ้าโอเคแล้ว 😊"
         ))
     except Exception as e:
         _push(user_id, f"❌ เกิดข้อผิดพลาดตอนรัน: {e}")
@@ -82,7 +82,8 @@ def _revise_and_push(user_id: str, feedback: str):
         _push(user_id, (
             f"✏️ แก้ไขเสร็จแล้ว! อัปเดตในไฟล์เดิมเลยนะ\n\n"
             f"📄 {link}\n\n"
-            f"มีอะไรให้แก้เพิ่มไหม? ถ้าโอเคพิมพ์ 'ลุย' ได้เลย 😊"
+            f"พิมพ์ 'revise <คอมเมนต์>' ถ้าอยากแก้เพิ่ม\n"
+            f"หรือพิมพ์ 'thank' ถ้าโอเคแล้ว 😊"
         ))
     except Exception as e:
         _push(user_id, f"❌ แก้ไขไม่ได้: {e}")
@@ -117,25 +118,28 @@ def handle_message(event):
             )
 
         if user_id in sessions:
-            session = sessions[user_id]
-
-            if text_lower == "ลุย":
+            if text_lower == "thank":
                 del sessions[user_id]
-                reply("ลุยเลย! เอกสารพร้อมส่งแล้ว 🚀🎉")
-            else:
+                reply("Thank you! เอกสารพร้อมส่งแล้ว 🚀🎉")
+            elif text_lower.startswith("revise "):
+                feedback = text[7:].strip()
                 reply("กำลังแก้ไขให้นะ รอแป๊บนึง... ✍️")
-                threading.Thread(target=_revise_and_push, args=(user_id, text)).start()
+                threading.Thread(target=_revise_and_push, args=(user_id, feedback)).start()
+            elif text_lower == "revise":
+                reply("บอกด้วยนะว่าอยากแก้อะไร เช่น: revise ทำให้กระชับขึ้น")
+            else:
+                reply("พิมพ์ 'revise <คอมเมนต์>' เพื่อแก้ไข หรือ 'thank' เมื่อเสร็จแล้ว")
             return
 
-        if text_lower in ROUTINE_MAP:
-            routine_cls = ROUTINE_MAP[text_lower]
-            reply(f"กำลังรัน {routine_cls.name} อยู่นะ รอแป๊บ... 🔄")
-            threading.Thread(target=_run_and_push, args=(user_id, routine_cls)).start()
-
-        elif text_lower in ("all", "ทั้งหมด"):
+        if text_lower == "run":
             reply("กำลังรันทุก routine อยู่นะ รอแป๊บ... 🔄")
             for routine_cls in ROUTINE_MAP.values():
                 threading.Thread(target=_run_and_push, args=(user_id, routine_cls)).start()
+
+        elif text_lower in ROUTINE_MAP:
+            routine_cls = ROUTINE_MAP[text_lower]
+            reply(f"กำลังรัน {routine_cls.name} อยู่นะ รอแป๊บ... 🔄")
+            threading.Thread(target=_run_and_push, args=(user_id, routine_cls)).start()
 
         else:
             reply(HELP_TEXT)
