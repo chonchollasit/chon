@@ -1,16 +1,19 @@
 """
-Start the LINE bot with a public ngrok tunnel.
+Start the LINE bot with a public localtunnel tunnel.
 
 Steps before running:
   1. Fill in .env (LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN,
-                   ANTHROPIC_API_KEY, NGROK_AUTHTOKEN)
+                   ANTHROPIC_API_KEY)
   2. python start.py
   3. Copy the printed Webhook URL into LINE Developers console
      Messaging API > Webhook settings > Webhook URL
      Then click "Verify" and enable "Use webhook"
 """
 import os
+import re
+import subprocess
 import threading
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,13 +26,19 @@ def _start_flask():
     app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
 
 
-def _start_ngrok():
-    from pyngrok import ngrok, conf
-    authtoken = os.environ.get("NGROK_AUTHTOKEN", "").strip()
-    if authtoken and not authtoken.startswith("your_"):
-        conf.get_default().auth_token = authtoken
-    tunnel = ngrok.connect(PORT, "http")
-    return tunnel.public_url.replace("http://", "https://")
+def _start_tunnel():
+    proc = subprocess.Popen(
+        ["lt", "--port", str(PORT)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    for line in proc.stdout:
+        line = line.strip()
+        match = re.search(r"https://[^\s]+", line)
+        if match:
+            return match.group(0), proc
+    raise RuntimeError("localtunnel did not return a URL")
 
 
 def _print_webhook(url: str):
@@ -51,23 +60,16 @@ def main():
 
     flask_thread = threading.Thread(target=_start_flask, daemon=True)
     flask_thread.start()
+    time.sleep(1)
 
     try:
-        public_url = _start_ngrok()
+        public_url, tunnel_proc = _start_tunnel()
         _print_webhook(public_url)
-    except Exception as e:
-        print(f"[!] ngrok failed: {e}")
-        print(f"[!] Flask is running on port {PORT}.")
-        print(f"[!] Expose it manually (ngrok desktop app, cloudflared, etc.)")
-        print(f"[!] Then set webhook to: https://<your-url>/callback\n")
-
-    try:
         flask_thread.join()
     except KeyboardInterrupt:
         print("\n[*] Shutting down...")
         try:
-            from pyngrok import ngrok
-            ngrok.kill()
+            tunnel_proc.terminate()
         except Exception:
             pass
 
