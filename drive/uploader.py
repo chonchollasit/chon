@@ -1,9 +1,12 @@
 import os
+import httplib2
+import google_auth_httplib2
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
+import requests
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 RESEARCHER_FOLDER_NAME = "Researcher"
@@ -17,13 +20,17 @@ def _get_drive_service():
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            session = requests.Session()
+            session.verify = False
+            creds.refresh(Request(session=session))
         else:
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
         with open(TOKEN_PATH, "w") as token_file:
             token_file.write(creds.to_json())
-    return build("drive", "v3", credentials=creds)
+    http = httplib2.Http(disable_ssl_certificate_validation=True)
+    authorized_http = google_auth_httplib2.AuthorizedHttp(creds, http=http)
+    return build("drive", "v3", http=authorized_http)
 
 
 def _get_or_create_researcher_folder(service) -> str:
