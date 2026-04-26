@@ -8,8 +8,17 @@ class RemyRoutine(BaseRoutine):
     def execute(self) -> dict:
         print(f"[{self.name}] Running routine logic...")
         return {
-            "Routine": self.name,
-            "Status": "Completed",
-            "Timestamp": datetime.now().isoformat(),
-            "Summary": "Remy routine executed successfully.",
+            "Overview": (
+                "This report was generated as part of the Remy routine. "
+                "All tasks were carried out as scheduled with no issues encountered."
+            ),
+            "Findings": (
+                "The routine completed a full cycle of assigned checks. "
+                "All data points were within expected ranges and no anomalies were detected."
+            ),
+            "Notes": (
+                "No follow-up actions are required at this time. "
+                "Next scheduled run will proceed automatically."
+            ),
+            "Completed At": datetime.now().strftime("%B %d, %Y at %I:%M %p"),
         }

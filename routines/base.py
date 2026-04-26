@@ -2,7 +2,8 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from drive.uploader import upload_to_researcher_folder
 
 
@@ -22,24 +23,32 @@ class BaseRoutine(ABC):
         """Run routine logic and return a dict of result data."""
 
     def _create_document(self, results: dict) -> str:
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"{self.name}_{timestamp}.docx"
+        now = datetime.now()
+        # Human-readable filename: e.g. "Remy - Research Report, April 26 2026.docx"
+        friendly_date = now.strftime("%B %d %Y").replace(" 0", " ")
+        filename = f"{self.name} - Research Report, {friendly_date}.docx"
         path = os.path.join("/tmp", filename)
 
         doc = Document()
-        doc.add_heading(f"{self.name} Routine Report", level=0)
 
-        meta = doc.add_paragraph()
-        meta.add_run("Generated: ").bold = True
-        meta.add_run(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        # Title
+        title = doc.add_heading(f"Research Report", level=0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        doc.add_heading("Results", level=1)
-        for key, value in results.items():
-            p = doc.add_paragraph(style="List Bullet")
-            run = p.add_run(f"{key}: ")
-            run.bold = True
-            run.font.size = Pt(11)
-            p.add_run(str(value))
+        # Subtitle: who wrote it and when
+        subtitle = doc.add_paragraph()
+        subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = subtitle.add_run(f"Prepared by {self.name}  |  {now.strftime('%B %d, %Y')}")
+        run.font.size = Pt(11)
+        run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+
+        doc.add_paragraph()  # spacing
+
+        # Body sections — each key becomes a natural heading + paragraph
+        for section_title, content in results.items():
+            doc.add_heading(section_title, level=2)
+            body = doc.add_paragraph(str(content))
+            body.style.font.size = Pt(11)
 
         doc.save(path)
         print(f"[{self.name}] Document saved to {path}")
