@@ -27,11 +27,15 @@ class BaseRoutine(ABC):
 
     def run(self):
         print(f"[{self.name}] Starting routine...")
+        _, link = self.run_and_return_link()
+        print(f"[{self.name}] Document uploaded to Researcher folder in Google Drive: {link}")
+
+    def run_and_return_link(self) -> tuple:
         results = self.execute()
         doc_path = self._create_document(results)
-        upload_to_researcher_folder(doc_path)
+        link = upload_to_researcher_folder(doc_path)
         os.remove(doc_path)
-        print(f"[{self.name}] Document uploaded to Researcher folder in Google Drive.")
+        return results, link
 
     @abstractmethod
     def execute(self) -> dict:

@@ -76,7 +76,6 @@ def upload_to_researcher_folder(file_path: str) -> str:
         .create(body=file_metadata, media_body=media, fields="id, name, webViewLink")
         .execute()
     )
-    print(
-        f"[Drive] Uploaded '{uploaded['name']}' -> {uploaded.get('webViewLink', 'n/a')}"
-    )
-    return uploaded["id"]
+    link = uploaded.get("webViewLink", f"https://drive.google.com/file/d/{uploaded['id']}/view")
+    print(f"[Drive] Uploaded '{uploaded['name']}' -> {link}")
+    return link
