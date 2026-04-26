@@ -4,6 +4,7 @@ from .base import BaseRoutine, _thai_datetime
 
 class AdamsRoutine(BaseRoutine):
     name = "Adams"
+    title = "Researcher"
 
     def execute(self) -> dict:
         print(f"[{self.name}] Running routine logic...")

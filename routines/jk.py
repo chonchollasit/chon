@@ -4,6 +4,7 @@ from .base import BaseRoutine, _thai_datetime
 
 class JKRoutine(BaseRoutine):
     name = "JK"
+    title = "Writer"
 
     def execute(self) -> dict:
         print(f"[{self.name}] Running routine logic...")

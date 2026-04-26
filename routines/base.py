@@ -23,6 +23,7 @@ def _thai_datetime(dt: datetime) -> str:
 
 class BaseRoutine(ABC):
     name: str = "BaseRoutine"
+    title: str = ""
 
     def run(self):
         print(f"[{self.name}] Starting routine...")
@@ -49,7 +50,11 @@ class BaseRoutine(ABC):
 
         subtitle = doc.add_paragraph()
         subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = subtitle.add_run(f"เขียนโดย {self.name}  ·  {_thai_date(now)}")
+        byline = f"เขียนโดย {self.name}"
+        if self.title:
+            byline += f" ({self.title})"
+        byline += f"  ·  {_thai_date(now)}"
+        run = subtitle.add_run(byline)
         run.font.size = Pt(11)
         run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
