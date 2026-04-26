@@ -5,13 +5,11 @@ import anthropic
 from docx import Document
 from .base import BaseRoutine, _thai_datetime, _thai_date
 from drive.uploader import list_files_in_folder, download_file_from_drive
-from gmail.sender import send_email
 
 _client = anthropic.Anthropic()
 
 ADAM_FOLDER_ID = "162o6fu1-OSlEEIAzgJEdLX6YdltMjYgc"
 REMY_FOLDER_ID = "1qPhgMizbhJ6e_g0dQi4pL4C4rTcKYwuo"
-EMAIL_TO = "oho121212@gmail.com"
 
 BANGKOK_TZ = timezone(timedelta(hours=7))
 
@@ -64,7 +62,6 @@ def _get_todays_research() -> tuple[str, str]:
                 break
 
     if not research_parts:
-        # Fallback: most recent file from either folder
         for folder_name, folder_id in [("Remy", REMY_FOLDER_ID), ("Adam", ADAM_FOLDER_ID)]:
             files = list_files_in_folder(folder_id, max_results=1)
             if files:
@@ -93,28 +90,15 @@ def _write_scripts(research: str) -> list[dict]:
     return json.loads(raw)
 
 
-def _build_email_body(scripts: list[dict], source_label: str, today_str: str) -> str:
-    lines = [
-        f"TikTok Scripts — {today_str}",
-        f"Research source: {source_label}",
-        "",
-    ]
-    for i, s in enumerate(scripts, 1):
-        lines += [
-            f"{'='*60}",
-            f"Script {i}: {s['topic']}",
-            f"Structure: {s['structure']}",
-            "",
-            f"Hook Option 1: {s['hook1']}",
-            f"Hook Option 2: {s['hook2']}",
-            "",
-            "Script:",
-            s["script"],
-            "",
-            f"Takeaway: {s['takeaway']}",
-            "",
-        ]
-    return "\n".join(lines)
+def _format_script_for_line(i: int, s: dict) -> str:
+    return (
+        f"🎬 Script {i}: {s['topic']}\n"
+        f"({s['structure']})\n\n"
+        f"Hook 1: {s['hook1']}\n"
+        f"Hook 2: {s['hook2']}\n\n"
+        f"{s['script']}\n\n"
+        f"💡 Takeaway: {s['takeaway']}"
+    )
 
 
 class JKRoutine(BaseRoutine):
@@ -126,18 +110,11 @@ class JKRoutine(BaseRoutine):
         research, source_label = _get_todays_research()
 
         print(f"[{self.name}] Writing 3 TikTok scripts from {source_label} research...")
-        scripts = _write_scripts(research)
+        self._scripts = _write_scripts(research)
 
         now = datetime.now(BANGKOK_TZ)
-        today_str = _thai_date(now)
-
-        email_body = _build_email_body(scripts, source_label, today_str)
-        subject = f"TikTok Scripts Ready - {now.strftime('%d/%m/%Y')}"
-        print(f"[{self.name}] Sending email to {EMAIL_TO}...")
-        send_email(EMAIL_TO, subject, email_body)
-
         result = {"📋 Research Source": source_label}
-        for i, s in enumerate(scripts, 1):
+        for i, s in enumerate(self._scripts, 1):
             result[f"🎬 Script {i} — {s['topic']}"] = (
                 f"Structure: {s['structure']}\n\n"
                 f"Hook 1: {s['hook1']}\n"
@@ -145,6 +122,11 @@ class JKRoutine(BaseRoutine):
                 f"{s['script']}\n\n"
                 f"Takeaway: {s['takeaway']}"
             )
-        result["📧 Email"] = f"Sent to {EMAIL_TO}"
         result["เสร็จตอน"] = _thai_datetime(now.replace(tzinfo=None))
         return result
+
+    def line_messages(self) -> list[str]:
+        """Returns each script as a separate LINE message."""
+        if not hasattr(self, "_scripts"):
+            return []
+        return [_format_script_for_line(i, s) for i, s in enumerate(self._scripts, 1)]

@@ -60,6 +60,9 @@ def _run_and_push(user_id: str, routine_cls):
             f"พิมพ์ 'revise <คอมเมนต์>' ถ้าอยากแก้ไข\n"
             f"หรือพิมพ์ 'thank' ถ้าโอเคแล้ว 😊"
         ))
+        if hasattr(routine, "line_messages"):
+            for msg in routine.line_messages():
+                _push(user_id, msg)
     except Exception as e:
         _push(user_id, f"❌ เกิดข้อผิดพลาดตอนรัน: {e}")
 
