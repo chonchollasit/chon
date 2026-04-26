@@ -18,7 +18,22 @@ TOKEN_PATH = "token.json"
 CREDENTIALS_PATH = "credentials.json"
 
 
+def _bootstrap_credential_files():
+    """Write credentials from env vars to files if files are missing."""
+    if not os.path.exists(CREDENTIALS_PATH):
+        raw = os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
+        if raw:
+            with open(CREDENTIALS_PATH, "w") as f:
+                f.write(raw)
+    if not os.path.exists(TOKEN_PATH):
+        raw = os.environ.get("GOOGLE_TOKEN_JSON", "")
+        if raw:
+            with open(TOKEN_PATH, "w") as f:
+                f.write(raw)
+
+
 def _get_creds():
+    _bootstrap_credential_files()
     creds = None
     if os.path.exists(TOKEN_PATH):
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
